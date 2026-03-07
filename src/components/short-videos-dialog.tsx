@@ -38,10 +38,17 @@ export function UploadShortVideoDialog({
   const [duration, setDuration] = useState('');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleUpload = () => {
-    if (title && description && videoFile) {
-      onUpload({
+  const handleUpload = async () => {
+    if (!title || !description || !videoFile) {
+      alert('请填写必填项');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await onUpload({
         title,
         description,
         videoFile,
@@ -57,6 +64,11 @@ export function UploadShortVideoDialog({
       setVideoFile(null);
       setThumbnailFile(null);
       onOpenChange(false);
+    } catch (error) {
+      alert('上传失败，请重试');
+      console.error(error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -145,14 +157,14 @@ export function UploadShortVideoDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
             取消
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={!title || !description || !videoFile}
+            disabled={!title || !description || !videoFile || isUploading}
           >
-            上传视频
+            {isUploading ? '上传中...' : '上传视频'}
           </Button>
         </DialogFooter>
       </DialogContent>

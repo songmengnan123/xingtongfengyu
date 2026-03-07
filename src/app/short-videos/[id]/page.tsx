@@ -11,19 +11,39 @@ import { ArrowLeft, Download, Eye, Calendar, User } from 'lucide-react';
 export default function ShortVideoDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
   const { getVideo, videos } = useShortVideos();
   const [video, setVideo] = useState<any>(null);
+  const [videoId, setVideoId] = useState<number | null>(null);
 
   useEffect(() => {
-    const id = parseInt(params.id);
-    const foundVideo = getVideo(id) || videos.find((v) => v.id === id);
-    if (foundVideo) {
-      setVideo(foundVideo);
-    }
-  }, [params.id, getVideo, videos]);
+    const loadParams = async () => {
+      const resolvedParams = await params;
+      setVideoId(parseInt(resolvedParams.id));
+    };
+    loadParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!videoId) return;
+
+    const loadVideo = async () => {
+      // 先从列表中查找
+      const foundInList = videos.find((v) => v.id === videoId);
+      if (foundInList) {
+        setVideo(foundInList);
+      } else {
+        // 从 IndexedDB 加载
+        const foundInDB = await getVideo(videoId);
+        if (foundInDB) {
+          setVideo(foundInDB);
+        }
+      }
+    };
+    loadVideo();
+  }, [videoId, getVideo, videos]);
 
   const handleDownload = () => {
     if (video?.videoUrl) {

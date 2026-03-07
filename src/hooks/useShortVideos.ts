@@ -1,80 +1,152 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { indexedDBService, StoredVideo } from '@/lib/indexedDB';
 
-export interface ShortVideo {
+export interface Video {
   id: number;
   title: string;
   description: string;
   videoUrl?: string;
   thumbnailUrl?: string;
+  author?: string;
   duration?: string;
   views?: number;
-  author?: string;
   createdAt?: Date;
 }
 
-const STORAGE_KEY = 'short_videos_data';
-
 export function useShortVideos() {
-  const [videos, setVideos] = useState<ShortVideo[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 从localStorage加载数据
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setVideos(parsed);
-      } catch (e) {
-        console.error('Failed to parse short videos data:', e);
-      }
-    }
-    setLoading(false);
+    loadVideos();
   }, []);
 
-  const saveToStorage = (data: ShortVideo[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const loadVideos = async () => {
+    try {
+      await indexedDBService.init();
+      const storedVideos = await indexedDBService.getAllVideos();
+
+      // 将 Blob 转换为 URL
+      const videosWithUrls: Video[] = storedVideos.map((v) => ({
+        id: v.id,
+        title: v.title,
+        description: v.description,
+        videoUrl: v.videoBlob ? URL.createObjectURL(v.videoBlob) : undefined,
+        thumbnailUrl: v.thumbnailBlob ? URL.createObjectURL(v.thumbnailBlob) : undefined,
+        author: v.author,
+        duration: v.duration,
+        views: v.views,
+        createdAt: v.createdAt,
+      }));
+
+      setVideos(videosWithUrls);
+    } catch (error) {
+      console.error('Failed to load videos:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addVideo = (data: Omit<ShortVideo, 'id' | 'createdAt' | 'views'>) => {
-    const newVideo: ShortVideo = {
-      ...data,
-      id: Date.now(),
-      createdAt: new Date(),
-      views: 0,
-    };
-    const updated = [...videos, newVideo];
-    setVideos(updated);
-    saveToStorage(updated);
-    return newVideo;
+  const addVideo = async (data: {
+    title: string;
+    description: string;
+    videoUrl?: string;
+    thumbnailUrl?: string;
+    author?: string;
+    duration?: string;
+  }) => {
+    try {
+      await indexedDBService.init();
+
+      // 将 Data URL 转换回 Blob
+      const videoBlob = data.videoUrl ? dataUrlToBlob(data.videoUrl) : undefined;
+      const thumbnailBlob = data.thumbnailUrl ? dataUrlToBlob(data.thumbnailUrl) : undefined;
+
+      const newVideo: StoredVideo = {
+        id: Date.now(),
+        title: data.title,
+        description: data.description,
+        videoBlob,
+        thumbnailBlob,
+        author: data.author,
+        duration: data.duration,
+        views: 0,
+        createdAt: new Date(),
+      };
+
+      await indexedDBService.saveVideo(newVideo);
+
+      // 重新加载列表
+      await loadVideos();
+    } catch (error) {
+      console.error('Failed to add video:', error);
+      throw error;
+    }
   };
 
-  const updateVideo = (id: number, data: Partial<ShortVideo>) => {
-    const updated = videos.map((video) =>
-      video.id === id ? { ...video, ...data } : video
-    );
-    setVideos(updated);
-    saveToStorage(updated);
+  const updateVideo = async (id: number, data: Partial<Video>) => {
+    try {
+      await indexedDBService.init();
+      const existing = await indexedDBService.getVideo(id);
+
+      if (existing) {
+        const updated: StoredVideo = {
+          ...existing,
+          ...data,
+        };
+
+        await indexedDBService.saveVideo(updated);
+        await loadVideos();
+      }
+    } catch (error) {
+      console.error('Failed to update video:', error);
+      throw error;
+    }
   };
 
-  const deleteVideo = (id: number) => {
-    const updated = videos.filter((video) => video.id !== id);
-    setVideos(updated);
-    saveToStorage(updated);
+  const deleteVideo = async (id: number) => {
+    try {
+      await indexedDBService.init();
+      await indexedDBService.deleteVideo(id);
+      await loadVideos();
+    } catch (error) {
+      console.error('Failed to delete video:', error);
+      throw error;
+    }
   };
 
-  const getVideo = (id: number) => {
-    return videos.find((video) => video.id === id);
+  const getVideo = async (id: number) => {
+    try {
+      await indexedDBService.init();
+      const stored = await indexedDBService.getVideo(id);
+
+      if (stored) {
+        return {
+          id: stored.id,
+          title: stored.title,
+          description: stored.description,
+          videoUrl: stored.videoBlob ? URL.createObjectURL(stored.videoBlob) : undefined,
+          thumbnailUrl: stored.thumbnailBlob ? URL.createObjectURL(stored.thumbnailBlob) : undefined,
+          author: stored.author,
+          duration: stored.duration,
+          views: stored.views,
+          createdAt: stored.createdAt,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get video:', error);
+      return null;
+    }
   };
 
-  const incrementViews = (id: number) => {
-    const updated = videos.map((video) =>
-      video.id === id ? { ...video, views: (video.views || 0) + 1 } : video
-    );
-    setVideos(updated);
-    saveToStorage(updated);
+  const incrementViews = async (id: number) => {
+    const video = videos.find((v) => v.id === id);
+    if (video) {
+      await updateVideo(id, { views: (video.views || 0) + 1 });
+    }
   };
 
   return {
@@ -86,4 +158,17 @@ export function useShortVideos() {
     getVideo,
     incrementViews,
   };
+}
+
+// 将 Data URL 转换为 Blob
+function dataUrlToBlob(dataUrl: string): Blob {
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/octet-stream';
+  const bstr = atob(parts[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
 }

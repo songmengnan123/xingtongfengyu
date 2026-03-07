@@ -11,12 +11,13 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function StoryDetailPage({ params }: { params: { id: string } }) {
-  const id = parseInt(params.id);
+export default async function StoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const storyId = parseInt(id);
 
   // 默认示例数据
   const story = {
-    id: id,
+    id: storyId,
     title: '古风故事',
     author: '作者名',
     description: '一个关于古代文人墨客的故事，讲述了他们在风雨飘摇的时代中坚守理想、追求真理的历程。故事充满了诗意和哲思，展现了中华文化的深厚底蕴。',

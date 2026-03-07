@@ -96,7 +96,7 @@ export default function ShortVideosPage() {
 
   const displayVideos = videos.length > 0 ? videos : defaultVideos;
 
-  const handleUpload = (data: {
+  const handleUpload = async (data: {
     title: string;
     description: string;
     videoFile: File | null;
@@ -104,7 +104,7 @@ export default function ShortVideosPage() {
     author: string;
     duration?: string;
   }) => {
-    // 将文件转换为 Base64 存储
+    // 将文件转换为 Base64
     const fileToBase64 = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -114,40 +114,37 @@ export default function ShortVideosPage() {
       });
     };
 
-    const processFiles = async () => {
-      let videoBase64: string | undefined;
-      let thumbnailBase64: string | undefined;
+    let videoBase64: string | undefined;
+    let thumbnailBase64: string | undefined;
 
-      // 转换视频文件（限制大小为 50MB）
-      if (data.videoFile) {
-        if (data.videoFile.size > 50 * 1024 * 1024) {
-          alert('视频文件过大，请上传小于 50MB 的视频');
-          return;
-        }
-        videoBase64 = await fileToBase64(data.videoFile);
+    // 转换视频文件
+    if (data.videoFile) {
+      if (data.videoFile.size > 50 * 1024 * 1024) {
+        alert('视频文件过大，请上传小于 50MB 的视频');
+        return;
       }
+      videoBase64 = await fileToBase64(data.videoFile);
+    }
 
-      // 转换缩略图文件
-      if (data.thumbnailFile) {
-        if (data.thumbnailFile.size > 5 * 1024 * 1024) {
-          alert('缩略图文件过大，请上传小于 5MB 的图片');
-          return;
-        }
-        thumbnailBase64 = await fileToBase64(data.thumbnailFile);
+    // 转换缩略图文件
+    if (data.thumbnailFile) {
+      if (data.thumbnailFile.size > 5 * 1024 * 1024) {
+        alert('缩略图文件过大，请上传小于 5MB 的图片');
+        return;
       }
+      thumbnailBase64 = await fileToBase64(data.thumbnailFile);
+    }
 
-      const videoData = {
-        title: data.title,
-        description: data.description,
-        videoUrl: videoBase64,
-        thumbnailUrl: thumbnailBase64,
-        author: data.author || undefined,
-        duration: data.duration || undefined,
-      };
-      addVideo(videoData);
+    const videoData = {
+      title: data.title,
+      description: data.description,
+      videoUrl: videoBase64,
+      thumbnailUrl: thumbnailBase64,
+      author: data.author || undefined,
+      duration: data.duration || undefined,
     };
 
-    processFiles();
+    await addVideo(videoData);
   };
 
   const handleEdit = (data: {

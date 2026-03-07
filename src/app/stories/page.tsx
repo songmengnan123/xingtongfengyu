@@ -27,8 +27,8 @@ export default function StoriesPage() {
 
   const displayStories = stories.length > 0 ? stories : defaultStories;
 
-  const handleUpload = (data: { title: string; author: string; category: string; excerpt: string; content: string; documentFile: File | null }) => {
-    // 将文件转换为 Base64 存储
+  const handleUpload = async (data: { title: string; author: string; category: string; excerpt: string; content: string; documentFile: File | null }) => {
+    // 将文件转换为 Base64
     const fileToBase64 = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -38,30 +38,27 @@ export default function StoriesPage() {
       });
     };
 
-    const processFile = async () => {
-      let documentBase64: string | undefined;
+    let documentBase64: string | undefined;
 
-      // 转换文档文件（限制大小为 10MB）
-      if (data.documentFile) {
-        if (data.documentFile.size > 10 * 1024 * 1024) {
-          alert('文档文件过大，请上传小于 10MB 的文档');
-          return;
-        }
-        documentBase64 = await fileToBase64(data.documentFile);
+    // 转换文档文件
+    if (data.documentFile) {
+      if (data.documentFile.size > 10 * 1024 * 1024) {
+        alert('文档文件过大，请上传小于 10MB 的文档');
+        return;
       }
+      documentBase64 = await fileToBase64(data.documentFile);
+    }
 
-      const storyData = {
-        title: data.title,
-        author: data.author,
-        category: data.category,
-        excerpt: data.excerpt,
-        content: data.content,
-        documentUrl: documentBase64,
-      };
-      addStory(storyData);
+    const storyData = {
+      title: data.title,
+      author: data.author,
+      category: data.category,
+      excerpt: data.excerpt,
+      content: data.content,
+      documentUrl: documentBase64,
     };
 
-    processFile();
+    await addStory(storyData);
   };
 
   const handleEdit = (data: { id: number; title: string; author: string; category: string; excerpt: string; content: string }) => {

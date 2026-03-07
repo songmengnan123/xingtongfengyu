@@ -27,10 +27,17 @@ export function UploadStoryDialog({ open, onOpenChange, onUpload }: UploadStoryD
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleUpload = () => {
-    if (title && author && category && excerpt) {
-      onUpload({ title, author, category, excerpt, content, documentFile });
+  const handleUpload = async () => {
+    if (!title || !author || !category || !excerpt) {
+      alert('请填写必填项');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await onUpload({ title, author, category, excerpt, content, documentFile });
       setTitle('');
       setAuthor('');
       setCategory('');
@@ -38,6 +45,11 @@ export function UploadStoryDialog({ open, onOpenChange, onUpload }: UploadStoryD
       setContent('');
       setDocumentFile(null);
       onOpenChange(false);
+    } catch (error) {
+      alert('上传失败，请重试');
+      console.error(error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -117,11 +129,11 @@ export function UploadStoryDialog({ open, onOpenChange, onUpload }: UploadStoryD
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
             取消
           </Button>
-          <Button onClick={handleUpload} disabled={!title || !author || !category || !excerpt}>
-            上传
+          <Button onClick={handleUpload} disabled={!title || !author || !category || !excerpt || isUploading}>
+            {isUploading ? '上传中...' : '上传'}
           </Button>
         </DialogFooter>
       </DialogContent>
