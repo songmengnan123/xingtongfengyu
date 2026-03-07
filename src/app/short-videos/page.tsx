@@ -96,6 +96,40 @@ export default function ShortVideosPage() {
 
   const displayVideos = videos.length > 0 ? videos : defaultVideos;
 
+  // 直接上传到对象存储（支持大文件）
+  const directUpload = async (file: File): Promise<string> => {
+    // 1. 获取上传 URL
+    const res = await fetch('/api/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('获取上传链接失败');
+    }
+
+    const { uploadUrl, accessUrl } = await res.json();
+
+    // 2. 直接上传到对象存储
+    console.log(`Direct uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+    
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+      },
+    });
+
+    console.log(`Upload complete: ${file.name}`);
+    
+    return accessUrl;
+  };
+
   const handleUpload = async (data: {
     title: string;
     description: string;
@@ -108,44 +142,13 @@ export default function ShortVideosPage() {
       let videoUrl: string | undefined;
       let thumbnailUrl: string | undefined;
 
-      // 上传视频文件
+      // 上传视频文件（使用直接上传，支持大文件）
       if (data.videoFile) {
-        if (data.videoFile.size > 25 * 1024 * 1024) {
-          alert('视频文件过大，请上传小于 25MB 的视频');
+        if (data.videoFile.size > 500 * 1024 * 1024) {
+          alert('视频文件过大，请上传小于 500MB 的视频');
           return;
         }
-        const formData = new FormData();
-        formData.append('file', data.videoFile);
-        console.log('Uploading video:', data.videoFile.name, 'Size:', (data.videoFile.size / 1024 / 1024).toFixed(2) + 'MB');
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-          signal: AbortSignal.timeout(120000), // 2分钟超时
-        });
-
-        // 检查响应状态
-        if (!res.ok) {
-          const text = await res.text();
-          console.error('Upload failed:', res.status, text.substring(0, 200));
-          throw new Error(`上传失败 (${res.status}): ${text.substring(0, 100)}`);
-        }
-
-        // 检查是否是 JSON
-        const contentType = res.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
-          const text = await res.text();
-          console.error('Invalid response:', text.substring(0, 200));
-          throw new Error('服务器返回错误，请重试');
-        }
-
-        const result = await res.json();
-        console.log('Video upload response:', result);
-        if (result.success) {
-          videoUrl = result.url;
-        } else {
-          throw new Error(result.message || result.error || '视频上传失败');
-        }
+        videoUrl = await directUpload(data.videoFile);
       }
 
       // 上传缩略图文件
@@ -154,36 +157,7 @@ export default function ShortVideosPage() {
           alert('缩略图文件过大，请上传小于 10MB 的图片');
           return;
         }
-        const formData = new FormData();
-        formData.append('file', data.thumbnailFile);
-        console.log('Uploading thumbnail:', data.thumbnailFile.name, 'Size:', (data.thumbnailFile.size / 1024).toFixed(2) + 'KB');
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-          signal: AbortSignal.timeout(60000), // 1分钟超时
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error('Upload failed:', res.status, text.substring(0, 200));
-          throw new Error(`上传失败 (${res.status}): ${text.substring(0, 100)}`);
-        }
-
-        const contentType = res.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
-          const text = await res.text();
-          console.error('Invalid response:', text.substring(0, 200));
-          throw new Error('服务器返回错误，请重试');
-        }
-
-        const result = await res.json();
-        console.log('Thumbnail upload response:', result);
-        if (result.success) {
-          thumbnailUrl = result.url;
-        } else {
-          throw new Error(result.message || result.error || '缩略图上传失败');
-        }
+        thumbnailUrl = await directUpload(data.thumbnailFile);
       }
 
       const videoData = {

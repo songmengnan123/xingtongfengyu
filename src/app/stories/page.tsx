@@ -27,46 +27,51 @@ export default function StoriesPage() {
 
   const displayStories = stories.length > 0 ? stories : defaultStories;
 
+  // 直接上传到对象存储（支持大文件）
+  const directUpload = async (file: File): Promise<string> => {
+    // 1. 获取上传 URL
+    const res = await fetch('/api/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('获取上传链接失败');
+    }
+
+    const { uploadUrl, accessUrl } = await res.json();
+
+    // 2. 直接上传到对象存储
+    console.log(`Direct uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+    
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+      },
+    });
+
+    console.log(`Upload complete: ${file.name}`);
+    
+    return accessUrl;
+  };
+
   const handleUpload = async (data: { title: string; author: string; category: string; excerpt: string; content: string; documentFile: File | null }) => {
     try {
       let documentUrl: string | undefined;
 
-      // 上传文档文件
+      // 上传文档文件（使用直接上传，支持大文件）
       if (data.documentFile) {
-        if (data.documentFile.size > 25 * 1024 * 1024) {
-          alert('文档文件过大，请上传小于 25MB 的文档');
+        if (data.documentFile.size > 500 * 1024 * 1024) {
+          alert('文档文件过大，请上传小于 500MB 的文档');
           return;
         }
-        const formData = new FormData();
-        formData.append('file', data.documentFile);
-        console.log('Uploading document:', data.documentFile.name, 'Size:', (data.documentFile.size / 1024 / 1024).toFixed(2) + 'MB');
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-          signal: AbortSignal.timeout(120000), // 2分钟超时
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error('Upload failed:', res.status, text.substring(0, 200));
-          throw new Error(`上传失败 (${res.status}): ${text.substring(0, 100)}`);
-        }
-
-        const contentType = res.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
-          const text = await res.text();
-          console.error('Invalid response:', text.substring(0, 200));
-          throw new Error('服务器返回错误，请重试');
-        }
-
-        const result = await res.json();
-        console.log('Document upload response:', result);
-        if (result.success) {
-          documentUrl = result.url;
-        } else {
-          throw new Error(result.message || result.error || '文档上传失败');
-        }
+        documentUrl = await directUpload(data.documentFile);
       }
 
       const storyData = {
