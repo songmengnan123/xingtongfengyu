@@ -39,15 +39,17 @@ export default function StoriesPage() {
         }
         const formData = new FormData();
         formData.append('file', data.documentFile);
+        console.log('Uploading document:', data.documentFile.name);
         const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
         const result = await res.json();
+        console.log('Document upload response:', result);
         if (result.success) {
           documentUrl = result.url;
         } else {
-          throw new Error('文档上传失败');
+          throw new Error(result.message || result.error || '文档上传失败');
         }
       }
 

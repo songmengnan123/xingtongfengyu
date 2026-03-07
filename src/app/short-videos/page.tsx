@@ -116,15 +116,17 @@ export default function ShortVideosPage() {
         }
         const formData = new FormData();
         formData.append('file', data.videoFile);
+        console.log('Uploading video:', data.videoFile.name);
         const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
         const result = await res.json();
+        console.log('Video upload response:', result);
         if (result.success) {
           videoUrl = result.url;
         } else {
-          throw new Error('视频上传失败');
+          throw new Error(result.message || result.error || '视频上传失败');
         }
       }
 
@@ -136,15 +138,17 @@ export default function ShortVideosPage() {
         }
         const formData = new FormData();
         formData.append('file', data.thumbnailFile);
+        console.log('Uploading thumbnail:', data.thumbnailFile.name);
         const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
         const result = await res.json();
+        console.log('Thumbnail upload response:', result);
         if (result.success) {
           thumbnailUrl = result.url;
         } else {
-          throw new Error('缩略图上传失败');
+          throw new Error(result.message || result.error || '缩略图上传失败');
         }
       }
 
