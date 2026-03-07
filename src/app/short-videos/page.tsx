@@ -104,47 +104,65 @@ export default function ShortVideosPage() {
     author: string;
     duration?: string;
   }) => {
-    // 将文件转换为 Base64
-    const fileToBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    };
+    try {
+      let videoUrl: string | undefined;
+      let thumbnailUrl: string | undefined;
 
-    let videoBase64: string | undefined;
-    let thumbnailBase64: string | undefined;
-
-    // 转换视频文件 (最大 500MB)
-    if (data.videoFile) {
-      if (data.videoFile.size > 500 * 1024 * 1024) {
-        alert('视频文件过大，请上传小于 500MB 的视频');
-        return;
+      // 上传视频文件
+      if (data.videoFile) {
+        if (data.videoFile.size > 500 * 1024 * 1024) {
+          alert('视频文件过大，请上传小于 500MB 的视频');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('file', data.videoFile);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await res.json();
+        if (result.success) {
+          videoUrl = result.url;
+        } else {
+          throw new Error('视频上传失败');
+        }
       }
-      videoBase64 = await fileToBase64(data.videoFile);
-    }
 
-    // 转换缩略图文件 (最大 10MB)
-    if (data.thumbnailFile) {
-      if (data.thumbnailFile.size > 10 * 1024 * 1024) {
-        alert('缩略图文件过大，请上传小于 10MB 的图片');
-        return;
+      // 上传缩略图文件
+      if (data.thumbnailFile) {
+        if (data.thumbnailFile.size > 10 * 1024 * 1024) {
+          alert('缩略图文件过大，请上传小于 10MB 的图片');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('file', data.thumbnailFile);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await res.json();
+        if (result.success) {
+          thumbnailUrl = result.url;
+        } else {
+          throw new Error('缩略图上传失败');
+        }
       }
-      thumbnailBase64 = await fileToBase64(data.thumbnailFile);
+
+      const videoData = {
+        title: data.title,
+        description: data.description,
+        videoUrl,
+        thumbnailUrl,
+        author: data.author || undefined,
+        duration: data.duration || undefined,
+      };
+
+      await addVideo(videoData);
+      alert('上传成功！');
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('上传失败，请重试');
     }
-
-    const videoData = {
-      title: data.title,
-      description: data.description,
-      videoUrl: videoBase64,
-      thumbnailUrl: thumbnailBase64,
-      author: data.author || undefined,
-      duration: data.duration || undefined,
-    };
-
-    await addVideo(videoData);
   };
 
   const handleEdit = (data: {

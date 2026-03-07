@@ -28,37 +28,44 @@ export default function StoriesPage() {
   const displayStories = stories.length > 0 ? stories : defaultStories;
 
   const handleUpload = async (data: { title: string; author: string; category: string; excerpt: string; content: string; documentFile: File | null }) => {
-    // 将文件转换为 Base64
-    const fileToBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    };
+    try {
+      let documentUrl: string | undefined;
 
-    let documentBase64: string | undefined;
-
-    // 转换文档文件 (最大 50MB)
-    if (data.documentFile) {
-      if (data.documentFile.size > 50 * 1024 * 1024) {
-        alert('文档文件过大，请上传小于 50MB 的文档');
-        return;
+      // 上传文档文件
+      if (data.documentFile) {
+        if (data.documentFile.size > 50 * 1024 * 1024) {
+          alert('文档文件过大，请上传小于 50MB 的文档');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('file', data.documentFile);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await res.json();
+        if (result.success) {
+          documentUrl = result.url;
+        } else {
+          throw new Error('文档上传失败');
+        }
       }
-      documentBase64 = await fileToBase64(data.documentFile);
+
+      const storyData = {
+        title: data.title,
+        author: data.author,
+        category: data.category,
+        excerpt: data.excerpt,
+        content: data.content,
+        documentUrl,
+      };
+
+      await addStory(storyData);
+      alert('上传成功！');
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('上传失败，请重试');
     }
-
-    const storyData = {
-      title: data.title,
-      author: data.author,
-      category: data.category,
-      excerpt: data.excerpt,
-      content: data.content,
-      documentUrl: documentBase64,
-    };
-
-    await addStory(storyData);
   };
 
   const handleEdit = (data: { id: number; title: string; author: string; category: string; excerpt: string; content: string }) => {
