@@ -122,7 +122,7 @@ export function UploadShortVideoDialog({
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="video">视频文件 * (支持 mp4, webm, mov 格式，最大 500MB)</Label>
+            <Label htmlFor="video">视频文件 * (支持 mp4, webm, mov 格式，最大 4MB)</Label>
             <Input
               id="video"
               type="file"
@@ -143,8 +143,8 @@ export function UploadShortVideoDialog({
               <p className="text-xs text-muted-foreground">
                 已选择: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
                 类型: {videoFile.type || '未知'}
-                {videoFile.size > 500 * 1024 * 1024 && (
-                  <span className="text-destructive ml-2">⚠️ 文件超过 500MB 限制</span>
+                {videoFile.size > 4 * 1024 * 1024 && (
+                  <span className="text-destructive ml-2">⚠️ 文件超过 4MB 限制</span>
                 )}
               </p>
             )}

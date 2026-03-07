@@ -110,8 +110,8 @@ export default function ShortVideosPage() {
 
       // 上传视频文件
       if (data.videoFile) {
-        if (data.videoFile.size > 100 * 1024 * 1024) {
-          alert('视频文件过大，请上传小于 100MB 的视频');
+        if (data.videoFile.size > 4 * 1024 * 1024) {
+          alert('视频文件过大，请上传小于 4MB 的视频');
           return;
         }
         const formData = new FormData();

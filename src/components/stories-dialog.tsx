@@ -111,7 +111,7 @@ export function UploadStoryDialog({ open, onOpenChange, onUpload }: UploadStoryD
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="document">文档文件 (支持 txt, pdf, docx, md 格式，最大 50MB)</Label>
+            <Label htmlFor="document">文档文件 (支持 txt, pdf, docx, md 格式，最大 4MB)</Label>
             <Input
               id="document"
               type="file"
@@ -121,8 +121,8 @@ export function UploadStoryDialog({ open, onOpenChange, onUpload }: UploadStoryD
             {documentFile && (
               <p className="text-xs text-muted-foreground">
                 已选择: {documentFile.name} ({(documentFile.size / 1024 / 1024).toFixed(2)} MB)
-                {documentFile.size > 50 * 1024 * 1024 && (
-                  <span className="text-destructive ml-2">⚠️ 文件超过 50MB 限制</span>
+                {documentFile.size > 4 * 1024 * 1024 && (
+                  <span className="text-destructive ml-2">⚠️ 文件超过 4MB 限制</span>
                 )}
               </p>
             )}
