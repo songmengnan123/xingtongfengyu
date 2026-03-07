@@ -69,7 +69,13 @@ class IndexedDBService {
       const request = store.put(video);
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        console.log('Video saved to IndexedDB:', video.id, {
+          hasBlob: !!video.videoBlob,
+          blobSize: video.videoBlob?.size,
+        });
+        resolve();
+      };
     });
   }
 
@@ -82,7 +88,16 @@ class IndexedDBService {
       const request = store.get(id);
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || null);
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result) {
+          console.log('Video retrieved from IndexedDB:', id, {
+            hasBlob: !!result.videoBlob,
+            blobSize: result.videoBlob?.size,
+          });
+        }
+        resolve(result || null);
+      };
     });
   }
 

@@ -29,17 +29,27 @@ export function useShortVideos() {
       const storedVideos = await indexedDBService.getAllVideos();
 
       // 将 Blob 转换为 URL
-      const videosWithUrls: Video[] = storedVideos.map((v) => ({
-        id: v.id,
-        title: v.title,
-        description: v.description,
-        videoUrl: v.videoBlob ? URL.createObjectURL(v.videoBlob) : undefined,
-        thumbnailUrl: v.thumbnailBlob ? URL.createObjectURL(v.thumbnailBlob) : undefined,
-        author: v.author,
-        duration: v.duration,
-        views: v.views,
-        createdAt: v.createdAt,
-      }));
+      const videosWithUrls: Video[] = storedVideos.map((v) => {
+        const videoUrl = v.videoBlob ? URL.createObjectURL(v.videoBlob) : undefined;
+        console.log(`Loading video ${v.id}:`, {
+          hasBlob: !!v.videoBlob,
+          blobSize: v.videoBlob?.size,
+          blobType: v.videoBlob?.type,
+          videoUrl: videoUrl?.substring(0, 100),
+        });
+
+        return {
+          id: v.id,
+          title: v.title,
+          description: v.description,
+          videoUrl,
+          thumbnailUrl: v.thumbnailBlob ? URL.createObjectURL(v.thumbnailBlob) : undefined,
+          author: v.author,
+          duration: v.duration,
+          views: v.views,
+          createdAt: v.createdAt,
+        };
+      });
 
       setVideos(videosWithUrls);
     } catch (error) {
@@ -61,8 +71,24 @@ export function useShortVideos() {
       await indexedDBService.init();
 
       // 将 Data URL 转换回 Blob
-      const videoBlob = data.videoUrl ? dataUrlToBlob(data.videoUrl) : undefined;
-      const thumbnailBlob = data.thumbnailUrl ? dataUrlToBlob(data.thumbnailUrl) : undefined;
+      let videoBlob: Blob | undefined;
+      let thumbnailBlob: Blob | undefined;
+
+      if (data.videoUrl) {
+        videoBlob = dataUrlToBlob(data.videoUrl);
+        console.log('Created video blob:', {
+          size: videoBlob.size,
+          type: videoBlob.type,
+        });
+      }
+
+      if (data.thumbnailUrl) {
+        thumbnailBlob = dataUrlToBlob(data.thumbnailUrl);
+        console.log('Created thumbnail blob:', {
+          size: thumbnailBlob.size,
+          type: thumbnailBlob.type,
+        });
+      }
 
       const newVideo: StoredVideo = {
         id: Date.now(),
@@ -77,6 +103,7 @@ export function useShortVideos() {
       };
 
       await indexedDBService.saveVideo(newVideo);
+      console.log('Video saved to IndexedDB:', newVideo.id);
 
       // 重新加载列表
       await loadVideos();
@@ -162,13 +189,30 @@ export function useShortVideos() {
 
 // 将 Data URL 转换为 Blob
 function dataUrlToBlob(dataUrl: string): Blob {
-  const parts = dataUrl.split(',');
-  const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/octet-stream';
-  const bstr = atob(parts[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
+  try {
+    const parts = dataUrl.split(',');
+    if (parts.length < 2) {
+      throw new Error('Invalid data URL');
+    }
+
+    const mime = parts[0].match(/:(.*?);/)?.[1] || 'video/mp4';
+    const bstr = atob(parts[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+
+    const blob = new Blob([u8arr], { type: mime });
+    console.log('Data URL to Blob:', {
+      mimeType: blob.type,
+      size: blob.size,
+    });
+
+    return blob;
+  } catch (error) {
+    console.error('Error converting data URL to blob:', error);
+    throw error;
   }
-  return new Blob([u8arr], { type: mime });
 }

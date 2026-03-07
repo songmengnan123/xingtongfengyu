@@ -19,6 +19,18 @@ export default function ShortVideoDetailPage({
   const [videoId, setVideoId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 清理 Blob URL
+  useEffect(() => {
+    return () => {
+      if (video?.videoUrl) {
+        URL.revokeObjectURL(video.videoUrl);
+      }
+      if (video?.thumbnailUrl) {
+        URL.revokeObjectURL(video.thumbnailUrl);
+      }
+    };
+  }, [video]);
+
   useEffect(() => {
     const loadParams = async () => {
       const resolvedParams = await params;
@@ -36,14 +48,22 @@ export default function ShortVideoDetailPage({
         // 先从列表中查找
         const foundInList = videos.find((v) => v.id === videoId);
         if (foundInList) {
-          console.log('Found video in list:', foundInList.videoUrl);
+          console.log('Found video in list:', {
+            id: foundInList.id,
+            hasVideoUrl: !!foundInList.videoUrl,
+            videoUrlPrefix: foundInList.videoUrl?.substring(0, 50),
+          });
           setVideo(foundInList);
         } else {
           // 从 IndexedDB 加载
           console.log('Loading video from IndexedDB, id:', videoId);
           const foundInDB = await getVideo(videoId);
           if (foundInDB) {
-            console.log('Loaded video from DB:', foundInDB.videoUrl);
+            console.log('Loaded video from DB:', {
+              id: foundInDB.id,
+              hasVideoUrl: !!foundInDB.videoUrl,
+              videoUrlPrefix: foundInDB.videoUrl?.substring(0, 50),
+            });
             setVideo(foundInDB);
           } else {
             console.log('Video not found');
@@ -132,17 +152,27 @@ export default function ShortVideoDetailPage({
                     <video
                       controls
                       className="w-full aspect-video"
-                      preload="metadata"
-                      controlsList="nodownload"
+                      preload="auto"
                       playsInline
-                      onError={(e) => console.error('Video error:', e)}
+                      onError={(e) => {
+                        const videoEl = e.target as HTMLVideoElement;
+                        console.error('Video error:', {
+                          code: videoEl.error?.code,
+                          message: videoEl.error?.message,
+                        });
+                        alert(`视频加载失败: ${videoEl.error?.message || '未知错误'}`);
+                      }}
+                      onLoadStart={() => console.log('Video loading started')}
+                      onCanPlay={() => console.log('Video can play')}
+                      onLoadedData={() => console.log('Video data loaded')}
                     >
-                      <source src={video.videoUrl} />
-                      您的浏览器不支持视频播放
+                      <source src={video.videoUrl} type="video/mp4" />
+                      <source src={video.videoUrl} type="video/webm" />
+                      您的浏览器不支持视频播放，请尝试其他浏览器
                     </video>
                     {process.env.NODE_ENV === 'development' && (
-                      <div className="p-2 text-xs text-muted-foreground bg-muted">
-                        Debug: {video.videoUrl.substring(0, 100)}...
+                      <div className="p-2 text-xs text-muted-foreground bg-muted break-all">
+                        Debug URL: {video.videoUrl}
                       </div>
                     )}
                   </div>

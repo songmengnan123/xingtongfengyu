@@ -126,12 +126,23 @@ export function UploadShortVideoDialog({
             <Input
               id="video"
               type="file"
-              accept="video/*"
-              onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+              accept="video/mp4,video/webm,video/quicktime"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setVideoFile(file);
+                if (file) {
+                  console.log('Video file selected:', {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                  });
+                }
+              }}
             />
             {videoFile && (
               <p className="text-xs text-muted-foreground">
                 已选择: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                类型: {videoFile.type || '未知'}
                 {videoFile.size > 500 * 1024 * 1024 && (
                   <span className="text-destructive ml-2">⚠️ 文件超过 500MB 限制</span>
                 )}
