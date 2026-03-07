@@ -110,7 +110,7 @@ export function UploadShortVideoDialog({
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="video">视频文件 * (支持 mp4, webm, mov 格式)</Label>
+            <Label htmlFor="video">视频文件 * (支持 mp4, webm, mov 格式，最大 50MB)</Label>
             <Input
               id="video"
               type="file"
@@ -120,11 +120,14 @@ export function UploadShortVideoDialog({
             {videoFile && (
               <p className="text-xs text-muted-foreground">
                 已选择: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                {videoFile.size > 50 * 1024 * 1024 && (
+                  <span className="text-destructive ml-2">⚠️ 文件超过 50MB 限制</span>
+                )}
               </p>
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="thumbnail">视频封面图片 (推荐)</Label>
+            <Label htmlFor="thumbnail">视频封面图片 (推荐，最大 5MB)</Label>
             <Input
               id="thumbnail"
               type="file"
@@ -133,7 +136,10 @@ export function UploadShortVideoDialog({
             />
             {thumbnailFile && (
               <p className="text-xs text-muted-foreground">
-                已选择: {thumbnailFile.name}
+                已选择: {thumbnailFile.name} ({(thumbnailFile.size / 1024 / 1024).toFixed(2)} MB)
+                {thumbnailFile.size > 5 * 1024 * 1024 && (
+                  <span className="text-destructive ml-2">⚠️ 文件超过 5MB 限制</span>
+                )}
               </p>
             )}
           </div>

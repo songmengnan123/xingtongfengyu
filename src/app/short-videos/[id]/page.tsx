@@ -33,6 +33,8 @@ export default function ShortVideoDetailPage({
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    } else {
+      alert('视频文件不可下载');
     }
   };
 

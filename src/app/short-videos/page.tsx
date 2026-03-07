@@ -104,15 +104,50 @@ export default function ShortVideosPage() {
     author: string;
     duration?: string;
   }) => {
-    const videoData = {
-      title: data.title,
-      description: data.description,
-      videoUrl: data.videoFile ? URL.createObjectURL(data.videoFile) : undefined,
-      thumbnailUrl: data.thumbnailFile ? URL.createObjectURL(data.thumbnailFile) : undefined,
-      author: data.author || undefined,
-      duration: data.duration || undefined,
+    // 将文件转换为 Base64 存储
+    const fileToBase64 = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
     };
-    addVideo(videoData);
+
+    const processFiles = async () => {
+      let videoBase64: string | undefined;
+      let thumbnailBase64: string | undefined;
+
+      // 转换视频文件（限制大小为 50MB）
+      if (data.videoFile) {
+        if (data.videoFile.size > 50 * 1024 * 1024) {
+          alert('视频文件过大，请上传小于 50MB 的视频');
+          return;
+        }
+        videoBase64 = await fileToBase64(data.videoFile);
+      }
+
+      // 转换缩略图文件
+      if (data.thumbnailFile) {
+        if (data.thumbnailFile.size > 5 * 1024 * 1024) {
+          alert('缩略图文件过大，请上传小于 5MB 的图片');
+          return;
+        }
+        thumbnailBase64 = await fileToBase64(data.thumbnailFile);
+      }
+
+      const videoData = {
+        title: data.title,
+        description: data.description,
+        videoUrl: videoBase64,
+        thumbnailUrl: thumbnailBase64,
+        author: data.author || undefined,
+        duration: data.duration || undefined,
+      };
+      addVideo(videoData);
+    };
+
+    processFiles();
   };
 
   const handleEdit = (data: {
@@ -220,18 +255,12 @@ export default function ShortVideosPage() {
               <div key={video.id} className="group relative overflow-hidden rounded-lg aspect-[9/16] bg-muted transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 border border-border/50 backdrop-blur-sm">
                 {/* 缩略图/视频预览 */}
                 {video.thumbnailUrl ? (
-                  <div className="absolute inset-0">
-                    <Suspense fallback={<Skeleton className="w-full h-full" />}>
-                      <Image
-                        src={video.thumbnailUrl}
-                        alt={video.title}
-                        fill
-                        className="object-cover"
-                        loading="lazy"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    </Suspense>
-                  </div>
+                  <img
+                    src={video.thumbnailUrl}
+                    alt={video.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
+                  />
                 ) : (
                   <div
                     className={`absolute inset-0 bg-gradient-to-br ${video.gradient || 'from-purple-200 to-blue-200'}`}

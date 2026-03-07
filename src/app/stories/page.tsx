@@ -28,15 +28,40 @@ export default function StoriesPage() {
   const displayStories = stories.length > 0 ? stories : defaultStories;
 
   const handleUpload = (data: { title: string; author: string; category: string; excerpt: string; content: string; documentFile: File | null }) => {
-    const storyData = {
-      title: data.title,
-      author: data.author,
-      category: data.category,
-      excerpt: data.excerpt,
-      content: data.content,
-      documentUrl: data.documentFile ? URL.createObjectURL(data.documentFile) : undefined,
+    // 将文件转换为 Base64 存储
+    const fileToBase64 = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
     };
-    addStory(storyData);
+
+    const processFile = async () => {
+      let documentBase64: string | undefined;
+
+      // 转换文档文件（限制大小为 10MB）
+      if (data.documentFile) {
+        if (data.documentFile.size > 10 * 1024 * 1024) {
+          alert('文档文件过大，请上传小于 10MB 的文档');
+          return;
+        }
+        documentBase64 = await fileToBase64(data.documentFile);
+      }
+
+      const storyData = {
+        title: data.title,
+        author: data.author,
+        category: data.category,
+        excerpt: data.excerpt,
+        content: data.content,
+        documentUrl: documentBase64,
+      };
+      addStory(storyData);
+    };
+
+    processFile();
   };
 
   const handleEdit = (data: { id: number; title: string; author: string; category: string; excerpt: string; content: string }) => {
@@ -57,10 +82,19 @@ export default function StoriesPage() {
 
   const handleDownload = (story: any) => {
     if (story.documentUrl) {
-      // 下载文档文件
+      // 下载文档文件（Base64 Data URL）
       const a = document.createElement('a');
       a.href = story.documentUrl;
-      a.download = `${story.title}${story.documentUrl.includes('.pdf') ? '.pdf' : story.documentUrl.includes('.docx') ? '.docx' : story.documentUrl.includes('.txt') ? '.txt' : '.md'}`;
+      // 根据内容类型推断扩展名
+      let extension = '.txt';
+      if (story.documentUrl.startsWith('data:application/pdf')) {
+        extension = '.pdf';
+      } else if (story.documentUrl.startsWith('data:application/vnd.openxmlformats-officedocument')) {
+        extension = '.docx';
+      } else if (story.documentUrl.startsWith('data:application/octet-stream')) {
+        extension = '.md';
+      }
+      a.download = `${story.title}${extension}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
