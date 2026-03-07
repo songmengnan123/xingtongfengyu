@@ -8,13 +8,6 @@ import { Button } from '@/components/ui/button';
 import { useShortVideos } from '@/hooks/useShortVideos';
 import { ArrowLeft, Download, Eye, Calendar, User } from 'lucide-react';
 
-// 为静态导出生成示例参数
-export async function generateStaticParams() {
-  return Array.from({ length: 100 }, (_, i) => ({
-    id: String(i + 1),
-  }));
-}
-
 export default function ShortVideoDetailPage({
   params,
 }: {
@@ -24,6 +17,7 @@ export default function ShortVideoDetailPage({
   const { getVideo, videos } = useShortVideos();
   const [video, setVideo] = useState<any>(null);
   const [videoId, setVideoId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadParams = async () => {
@@ -37,20 +31,46 @@ export default function ShortVideoDetailPage({
     if (!videoId) return;
 
     const loadVideo = async () => {
-      // 先从列表中查找
-      const foundInList = videos.find((v) => v.id === videoId);
-      if (foundInList) {
-        setVideo(foundInList);
-      } else {
-        // 从 IndexedDB 加载
-        const foundInDB = await getVideo(videoId);
-        if (foundInDB) {
-          setVideo(foundInDB);
+      setLoading(true);
+      try {
+        // 先从列表中查找
+        const foundInList = videos.find((v) => v.id === videoId);
+        if (foundInList) {
+          console.log('Found video in list:', foundInList.videoUrl);
+          setVideo(foundInList);
+        } else {
+          // 从 IndexedDB 加载
+          console.log('Loading video from IndexedDB, id:', videoId);
+          const foundInDB = await getVideo(videoId);
+          if (foundInDB) {
+            console.log('Loaded video from DB:', foundInDB.videoUrl);
+            setVideo(foundInDB);
+          } else {
+            console.log('Video not found');
+          }
         }
+      } catch (error) {
+        console.error('Error loading video:', error);
+      } finally {
+        setLoading(false);
       }
     };
     loadVideo();
   }, [videoId, getVideo, videos]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-20 pb-16">
+          <div className="container mx-auto px-6 text-center">
+            <p>加载中...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const handleDownload = () => {
     if (video?.videoUrl) {
@@ -108,16 +128,24 @@ export default function ShortVideoDetailPage({
             <div className="lg:col-span-2">
               <div className="rounded-lg overflow-hidden bg-black shadow-xl">
                 {video.videoUrl ? (
-                  <video
-                    controls
-                    className="w-full aspect-video"
-                    preload="metadata"
-                    controlsList="nodownload"
-                    playsInline
-                  >
-                    <source src={video.videoUrl} />
-                    您的浏览器不支持视频播放
-                  </video>
+                  <div>
+                    <video
+                      controls
+                      className="w-full aspect-video"
+                      preload="metadata"
+                      controlsList="nodownload"
+                      playsInline
+                      onError={(e) => console.error('Video error:', e)}
+                    >
+                      <source src={video.videoUrl} />
+                      您的浏览器不支持视频播放
+                    </video>
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="p-2 text-xs text-muted-foreground bg-muted">
+                        Debug: {video.videoUrl.substring(0, 100)}...
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="w-full aspect-video flex items-center justify-center bg-muted">
                     <p className="text-muted-foreground">暂无视频文件</p>

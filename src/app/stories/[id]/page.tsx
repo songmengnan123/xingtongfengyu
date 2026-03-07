@@ -8,13 +8,6 @@ import { Button } from '@/components/ui/button';
 import { useStories } from '@/hooks/useStories';
 import { ArrowLeft, Download, Calendar, User, BookOpen, FileText } from 'lucide-react';
 
-// 为静态导出生成示例参数
-export async function generateStaticParams() {
-  return Array.from({ length: 100 }, (_, i) => ({
-    id: String(i + 1),
-  }));
-}
-
 export default function StoryDetailPage({
   params,
 }: {
@@ -24,6 +17,7 @@ export default function StoryDetailPage({
   const { getStory, stories } = useStories();
   const [story, setStory] = useState<any>(null);
   const [storyId, setStoryId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadParams = async () => {
@@ -37,16 +31,23 @@ export default function StoryDetailPage({
     if (!storyId) return;
 
     const loadStory = async () => {
-      // 先从列表中查找
-      const foundInList = stories.find((s) => s.id === storyId);
-      if (foundInList) {
-        setStory(foundInList);
-      } else {
-        // 从 IndexedDB 加载
-        const foundInDB = await getStory(storyId);
-        if (foundInDB) {
-          setStory(foundInDB);
+      setLoading(true);
+      try {
+        // 先从列表中查找
+        const foundInList = stories.find((s) => s.id === storyId);
+        if (foundInList) {
+          setStory(foundInList);
+        } else {
+          // 从 IndexedDB 加载
+          const foundInDB = await getStory(storyId);
+          if (foundInDB) {
+            setStory(foundInDB);
+          }
         }
+      } catch (error) {
+        console.error('Error loading story:', error);
+      } finally {
+        setLoading(false);
       }
     };
     loadStory();
@@ -80,6 +81,20 @@ export default function StoryDetailPage({
       URL.revokeObjectURL(url);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-20 pb-16">
+          <div className="container mx-auto px-6 text-center">
+            <p>加载中...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!story) {
     return (
