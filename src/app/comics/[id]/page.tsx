@@ -6,17 +6,18 @@ import { ArrowLeft, Calendar, Eye } from 'lucide-react';
 
 // 为静态导出生成示例参数
 export async function generateStaticParams() {
-  return Array.from({ length: 3 }, (_, i) => ({
+  return Array.from({ length: 100 }, (_, i) => ({
     id: String(i + 1),
   }));
 }
 
-export default function ComicDetailPage({ params }: { params: { id: string } }) {
-  const id = parseInt(params.id);
+export default async function ComicDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const comicId = parseInt(id);
 
   // 默认示例数据
   const comic = {
-    id: id,
+    id: comicId,
     title: '古风漫剧',
     description: '传统与现代的完美融合。这部漫剧以精妙的画面和动人的故事，展现了中华文化的博大精深。从古典建筑到传统服饰，从古琴诗词到书法绘画，每一个细节都充满了东方韵味。',
     cover: '',

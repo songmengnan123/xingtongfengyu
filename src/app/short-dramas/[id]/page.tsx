@@ -6,17 +6,18 @@ import { ArrowLeft, Calendar, Eye, Play, Clock } from 'lucide-react';
 
 // 为静态导出生成示例参数
 export async function generateStaticParams() {
-  return Array.from({ length: 3 }, (_, i) => ({
+  return Array.from({ length: 100 }, (_, i) => ({
     id: String(i + 1),
   }));
 }
 
-export default function ShortDramaDetailPage({ params }: { params: { id: string } }) {
-  const id = parseInt(params.id);
+export default async function ShortDramaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const dramaId = parseInt(id);
 
   // 默认示例数据
   const drama = {
-    id: id,
+    id: dramaId,
     title: '古风短剧',
     description: '一部精致短剧，以独特的视角展现了古代生活的美好与智慧。每一帧画面都如诗如画，每一个故事都触动人心。',
     cover: '',

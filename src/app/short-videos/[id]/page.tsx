@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button';
 import { useShortVideos } from '@/hooks/useShortVideos';
 import { ArrowLeft, Download, Eye, Calendar, User } from 'lucide-react';
 
+// 为静态导出生成示例参数
+export async function generateStaticParams() {
+  return Array.from({ length: 100 }, (_, i) => ({
+    id: String(i + 1),
+  }));
+}
+
 export default function ShortVideoDetailPage({
   params,
 }: {
@@ -105,8 +112,10 @@ export default function ShortVideoDetailPage({
                     controls
                     className="w-full aspect-video"
                     preload="metadata"
+                    controlsList="nodownload"
+                    playsInline
                   >
-                    <source src={video.videoUrl} type="video/mp4" />
+                    <source src={video.videoUrl} />
                     您的浏览器不支持视频播放
                   </video>
                 ) : (

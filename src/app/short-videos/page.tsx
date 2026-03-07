@@ -117,19 +117,19 @@ export default function ShortVideosPage() {
     let videoBase64: string | undefined;
     let thumbnailBase64: string | undefined;
 
-    // 转换视频文件
+    // 转换视频文件 (最大 500MB)
     if (data.videoFile) {
-      if (data.videoFile.size > 50 * 1024 * 1024) {
-        alert('视频文件过大，请上传小于 50MB 的视频');
+      if (data.videoFile.size > 500 * 1024 * 1024) {
+        alert('视频文件过大，请上传小于 500MB 的视频');
         return;
       }
       videoBase64 = await fileToBase64(data.videoFile);
     }
 
-    // 转换缩略图文件
+    // 转换缩略图文件 (最大 10MB)
     if (data.thumbnailFile) {
-      if (data.thumbnailFile.size > 5 * 1024 * 1024) {
-        alert('缩略图文件过大，请上传小于 5MB 的图片');
+      if (data.thumbnailFile.size > 10 * 1024 * 1024) {
+        alert('缩略图文件过大，请上传小于 10MB 的图片');
         return;
       }
       thumbnailBase64 = await fileToBase64(data.thumbnailFile);

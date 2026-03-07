@@ -40,10 +40,10 @@ export default function StoriesPage() {
 
     let documentBase64: string | undefined;
 
-    // 转换文档文件
+    // 转换文档文件 (最大 50MB)
     if (data.documentFile) {
-      if (data.documentFile.size > 10 * 1024 * 1024) {
-        alert('文档文件过大，请上传小于 10MB 的文档');
+      if (data.documentFile.size > 50 * 1024 * 1024) {
+        alert('文档文件过大，请上传小于 50MB 的文档');
         return;
       }
       documentBase64 = await fileToBase64(data.documentFile);
