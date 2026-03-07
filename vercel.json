@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 300
+    }
+  },
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "env": {
+    "COZE_BUCKET_ENDPOINT_URL": "https://s3.coze-coding.com",
+    "COZE_BUCKET_NAME": "xingtongfengyu"
+  }
+}
