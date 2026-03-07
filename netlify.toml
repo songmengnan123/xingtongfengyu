@@ -5,6 +5,8 @@
 [build.environment]
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_VERSION = "20"
+  COZE_BUCKET_ENDPOINT_URL = "https://s3.coze-coding.com"
+  COZE_BUCKET_NAME = "xingtongfengyu"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
