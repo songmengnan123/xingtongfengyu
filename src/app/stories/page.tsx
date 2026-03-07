@@ -33,8 +33,8 @@ export default function StoriesPage() {
 
       // 上传文档文件
       if (data.documentFile) {
-        if (data.documentFile.size > 50 * 1024 * 1024) {
-          alert('文档文件过大，请上传小于 50MB 的文档');
+        if (data.documentFile.size > 25 * 1024 * 1024) {
+          alert('文档文件过大，请上传小于 25MB 的文档');
           return;
         }
         const formData = new FormData();

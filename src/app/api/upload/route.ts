@@ -1,45 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadToStorage } from '@/lib/storage';
+import { S3Storage } from "coze-coding-dev-sdk";
+
+const endpointUrl = process.env.COZE_BUCKET_ENDPOINT_URL || "https://s3.coze-coding.com";
+const bucketName = process.env.COZE_BUCKET_NAME || "xingtongfengyu";
+
+console.log('Upload API init:', { endpointUrl, bucketName });
+
+const storage = new S3Storage({
+  endpointUrl,
+  accessKey: "",
+  secretKey: "",
+  bucketName,
+  region: "cn-beijing",
+});
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('=== Upload API called ===');
-    
     const formData = await req.formData();
     const file = formData.get('file') as File;
 
-    console.log('Received file:', { 
-      hasFile: !!file, 
-      name: file?.name, 
-      size: file?.size, 
-      type: file?.type 
-    });
-
     if (!file) {
-      console.log('Error: No file provided');
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const result = await uploadToStorage(file);
+    // Cloudflare Pages 限制：文件大小不能太大
+    const maxSize = 25 * 1024 * 1024; // 25MB
+    if (file.size > maxSize) {
+      return NextResponse.json({ 
+        error: 'File too large',
+        message: `File size ${file.size} exceeds limit of ${maxSize} bytes`
+      }, { status: 413 });
+    }
 
-    console.log('Upload result:', { 
-      success: true, 
-      key: result.key, 
-      url: result.url.substring(0, 100) + '...' 
+    // 转换为 Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 上传到 S3
+    const key = await storage.uploadFile({
+      fileContent: buffer,
+      fileName: `uploads/${Date.now()}_${file.name}`,
+      contentType: file.type || 'application/octet-stream',
+    });
+
+    // 生成访问 URL
+    const url = await storage.generatePresignedUrl({
+      key,
+      expireTime: 31536000, // 1年
     });
 
     return NextResponse.json({
       success: true,
-      key: result.key,
-      url: result.url,
+      key: key,
+      url: url,
     });
   } catch (error: any) {
     console.error('Upload error:', error);
-    console.error('Error stack:', error.stack);
     return NextResponse.json({ 
       error: 'Upload failed', 
       message: error?.message || 'Unknown error',
-      details: error?.toString()
+      details: error?.toString?.substring(0, 500)
     }, { status: 500 });
   }
 }
