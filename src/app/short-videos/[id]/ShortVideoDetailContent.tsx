@@ -18,18 +18,20 @@ export function ShortVideoDetailContent({
   const [video, setVideo] = useState<any>(null);
   const [videoId, setVideoId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
+  const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState<string | null>(null);
 
-  // 清理 Blob URL
+  // 清理 Blob URL - 只在组件卸载时清理
   useEffect(() => {
     return () => {
-      if (video?.videoUrl) {
-        URL.revokeObjectURL(video.videoUrl);
+      if (currentVideoUrl) {
+        URL.revokeObjectURL(currentVideoUrl);
       }
-      if (video?.thumbnailUrl) {
-        URL.revokeObjectURL(video.thumbnailUrl);
+      if (currentThumbnailUrl) {
+        URL.revokeObjectURL(currentThumbnailUrl);
       }
     };
-  }, [video]);
+  }, [currentVideoUrl, currentThumbnailUrl]);
 
   useEffect(() => {
     const loadParams = async () => {
@@ -54,6 +56,8 @@ export function ShortVideoDetailContent({
             videoUrlPrefix: foundInList.videoUrl?.substring(0, 50),
           });
           setVideo(foundInList);
+          setCurrentVideoUrl(foundInList.videoUrl || null);
+          setCurrentThumbnailUrl(foundInList.thumbnailUrl || null);
         } else {
           // 从 IndexedDB 加载
           console.log('Loading video from IndexedDB, id:', videoId);
@@ -65,6 +69,8 @@ export function ShortVideoDetailContent({
               videoUrlPrefix: foundInDB.videoUrl?.substring(0, 50),
             });
             setVideo(foundInDB);
+            setCurrentVideoUrl(foundInDB.videoUrl || null);
+            setCurrentThumbnailUrl(foundInDB.thumbnailUrl || null);
           } else {
             console.log('Video not found');
           }
@@ -148,34 +154,31 @@ export function ShortVideoDetailContent({
             <div className="lg:col-span-2">
               <div className="rounded-lg overflow-hidden bg-black shadow-xl">
                 {video.videoUrl ? (
-                  <div>
-                    <video
-                      controls
-                      className="w-full aspect-video"
-                      preload="auto"
-                      playsInline
-                      onError={(e) => {
-                        const videoEl = e.target as HTMLVideoElement;
-                        console.error('Video error:', {
-                          code: videoEl.error?.code,
-                          message: videoEl.error?.message,
-                        });
-                        alert(`视频加载失败: ${videoEl.error?.message || '未知错误'}`);
-                      }}
-                      onLoadStart={() => console.log('Video loading started')}
-                      onCanPlay={() => console.log('Video can play')}
-                      onLoadedData={() => console.log('Video data loaded')}
-                    >
-                      <source src={video.videoUrl} type="video/mp4" />
-                      <source src={video.videoUrl} type="video/webm" />
-                      您的浏览器不支持视频播放，请尝试其他浏览器
-                    </video>
-                    {process.env.NODE_ENV === 'development' && (
-                      <div className="p-2 text-xs text-muted-foreground bg-muted break-all">
-                        Debug URL: {video.videoUrl}
-                      </div>
-                    )}
-                  </div>
+                  <video
+                    key={video.videoUrl}
+                    controls
+                    className="w-full aspect-video"
+                    preload="metadata"
+                    playsInline
+                    onError={(e) => {
+                      const videoEl = e.target as HTMLVideoElement;
+                      console.error('Video error:', {
+                        error: videoEl.error,
+                        code: videoEl.error?.code,
+                        message: videoEl.error?.message,
+                        videoUrl: video.videoUrl,
+                        networkState: videoEl.networkState,
+                        readyState: videoEl.readyState,
+                      });
+                      alert(`视频加载失败: ${videoEl.error?.message || '未知错误，可能是 Blob URL 已失效'}`);
+                    }}
+                    onLoadStart={() => console.log('Video loading started')}
+                    onCanPlay={() => console.log('Video can play')}
+                    onLoadedData={() => console.log('Video data loaded')}
+                    onStalled={() => console.log('Video stalled')}
+                  >
+                    <source src={video.videoUrl} type="video/mp4" />
+                  </video>
                 ) : (
                   <div className="w-full aspect-video flex items-center justify-center bg-muted">
                     <p className="text-muted-foreground">暂无视频文件</p>
