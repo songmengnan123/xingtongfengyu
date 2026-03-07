@@ -33,17 +33,33 @@ export default function StoriesPage() {
 
       // 上传文档文件
       if (data.documentFile) {
-        if (data.documentFile.size > 50 * 1024 * 1024) {
-          alert('文档文件过大，请上传小于 50MB 的文档');
+        if (data.documentFile.size > 10 * 1024 * 1024) {
+          alert('文档文件过大，请上传小于 10MB 的文档');
           return;
         }
         const formData = new FormData();
         formData.append('file', data.documentFile);
-        console.log('Uploading document:', data.documentFile.name);
+        console.log('Uploading document:', data.documentFile.name, 'Size:', (data.documentFile.size / 1024 / 1024).toFixed(2) + 'MB');
+        
         const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
+          signal: AbortSignal.timeout(120000), // 2分钟超时
         });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('Upload failed:', res.status, text.substring(0, 200));
+          throw new Error(`上传失败 (${res.status}): ${text.substring(0, 100)}`);
+        }
+
+        const contentType = res.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          const text = await res.text();
+          console.error('Invalid response:', text.substring(0, 200));
+          throw new Error('服务器返回错误，请重试');
+        }
+
         const result = await res.json();
         console.log('Document upload response:', result);
         if (result.success) {

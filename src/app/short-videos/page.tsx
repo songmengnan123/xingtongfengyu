@@ -110,17 +110,35 @@ export default function ShortVideosPage() {
 
       // 上传视频文件
       if (data.videoFile) {
-        if (data.videoFile.size > 500 * 1024 * 1024) {
-          alert('视频文件过大，请上传小于 500MB 的视频');
+        if (data.videoFile.size > 100 * 1024 * 1024) {
+          alert('视频文件过大，请上传小于 100MB 的视频');
           return;
         }
         const formData = new FormData();
         formData.append('file', data.videoFile);
-        console.log('Uploading video:', data.videoFile.name);
+        console.log('Uploading video:', data.videoFile.name, 'Size:', (data.videoFile.size / 1024 / 1024).toFixed(2) + 'MB');
+        
         const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
+          signal: AbortSignal.timeout(120000), // 2分钟超时
         });
+
+        // 检查响应状态
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('Upload failed:', res.status, text.substring(0, 200));
+          throw new Error(`上传失败 (${res.status}): ${text.substring(0, 100)}`);
+        }
+
+        // 检查是否是 JSON
+        const contentType = res.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          const text = await res.text();
+          console.error('Invalid response:', text.substring(0, 200));
+          throw new Error('服务器返回错误，请重试');
+        }
+
         const result = await res.json();
         console.log('Video upload response:', result);
         if (result.success) {
@@ -138,11 +156,27 @@ export default function ShortVideosPage() {
         }
         const formData = new FormData();
         formData.append('file', data.thumbnailFile);
-        console.log('Uploading thumbnail:', data.thumbnailFile.name);
+        console.log('Uploading thumbnail:', data.thumbnailFile.name, 'Size:', (data.thumbnailFile.size / 1024).toFixed(2) + 'KB');
+        
         const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
+          signal: AbortSignal.timeout(60000), // 1分钟超时
         });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('Upload failed:', res.status, text.substring(0, 200));
+          throw new Error(`上传失败 (${res.status}): ${text.substring(0, 100)}`);
+        }
+
+        const contentType = res.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          const text = await res.text();
+          console.error('Invalid response:', text.substring(0, 200));
+          throw new Error('服务器返回错误，请重试');
+        }
+
         const result = await res.json();
         console.log('Thumbnail upload response:', result);
         if (result.success) {
