@@ -2,12 +2,10 @@ import type { NextConfig } from 'next';
 import path from 'path';
 
 const nextConfig: NextConfig = {
-  // 移除静态导出配置，改用动态渲染以支持动态 ID
-  // output: 'export',
-
-  // 图片优化配置
+  // Cloudflare Pages 需要静态导出
+  output: 'export',
   images: {
-    unoptimized: false, // 启用图片优化
+    unoptimized: true, // Cloudflare Pages 需要禁用图片优化
     remotePatterns: [
       {
         protocol: 'https',
@@ -21,22 +19,21 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  allowedDevOrigins: ['*.dev.coze.site'],
 
   // 性能优化
-  compress: true, // 启用 gzip 压缩
+  compress: true,
 
   // 生产环境优化
-  productionBrowserSourceMaps: false, // 禁用生产环境的 source maps
+  productionBrowserSourceMaps: false,
 
   // 编译优化
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production', // 生产环境移除 console
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 
   // 实验性功能
   experimental: {
-    optimizePackageImports: ['lucide-react'], // 优化 lucide-react 的导入
+    optimizePackageImports: ['lucide-react'],
   },
 };
 
