@@ -217,7 +217,7 @@ export default function ShortVideosPage() {
           {/* 短视频列表 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
             {displayVideos.map((video: any) => (
-              <div className="group relative overflow-hidden rounded-lg aspect-[9/16] bg-muted transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 border border-border/50 backdrop-blur-sm">
+              <div key={video.id} className="group relative overflow-hidden rounded-lg aspect-[9/16] bg-muted transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 border border-border/50 backdrop-blur-sm">
                 {/* 缩略图/视频预览 */}
                 {video.thumbnailUrl ? (
                   <div className="absolute inset-0">

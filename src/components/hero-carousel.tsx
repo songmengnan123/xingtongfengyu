@@ -19,8 +19,8 @@ const carouselSlides = [
   },
   {
     id: 2,
-    title: '漫剧世界',
-    subtitle: '沉浸式视听体验',
+    title: '短视频',
+    subtitle: '记录精彩瞬间，分享美好生活',
     gradient: 'from-secondary/20 via-accent/20 to-primary/20',
     textColor: 'text-foreground'
   },
@@ -29,13 +29,6 @@ const carouselSlides = [
     title: '故事海洋',
     subtitle: '每一个故事都值得被讲述',
     gradient: 'from-accent/20 via-primary/20 to-secondary/20',
-    textColor: 'text-foreground'
-  },
-  {
-    id: 4,
-    title: '短剧时光',
-    subtitle: '精彩瞬间，触手可及',
-    gradient: 'from-primary/20 via-secondary/20 to-accent/20',
     textColor: 'text-foreground'
   },
 ];

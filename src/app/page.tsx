@@ -60,12 +60,12 @@ export default function Home() {
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
                 我们致力于打造一个融合东方美学与现代科技的文化创意平台。
-                在这里，你可以欣赏精美的漫剧、阅读动人的故事、观看精彩的短剧，
+                在这里，你可以欣赏精彩的短视频、阅读动人的故事，
                 感受传统文化的魅力与现代创意的碰撞。
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Link
-                  href="/comics"
+                  href="/short-videos"
                   className="px-8 py-3 bg-gradient-to-r from-foreground to-foreground/90 text-background hover:from-foreground/90 hover:to-foreground transition-all rounded-lg shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   开始探索

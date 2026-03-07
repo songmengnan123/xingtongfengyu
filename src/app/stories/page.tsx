@@ -147,7 +147,7 @@ export default function StoriesPage() {
           {/* 故事列表 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
             {displayStories.map((story: any) => (
-              <div className="group p-4 sm:p-6 border border-border rounded-lg hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/10 bg-card relative backdrop-blur-sm">
+              <div key={story.id} className="group p-4 sm:p-6 border border-border rounded-lg hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/10 bg-card relative backdrop-blur-sm">
                 {/* 科技光效 */}
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
