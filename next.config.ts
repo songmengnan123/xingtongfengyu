@@ -2,11 +2,12 @@ import type { NextConfig } from 'next';
 import path from 'path';
 
 const nextConfig: NextConfig = {
-  // 静态导出配置，用于 Netlify 部署
-  output: 'export',
-  // 禁用图片优化（静态导出不支持）
+  // 移除静态导出配置，改用动态渲染以支持动态 ID
+  // output: 'export',
+
+  // 图片优化配置
   images: {
-    unoptimized: true,
+    unoptimized: false, // 启用图片优化
     remotePatterns: [
       {
         protocol: 'https',
